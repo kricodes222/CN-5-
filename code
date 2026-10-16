@@ -1,0 +1,205 @@
+A) Client program:
+
+ 
+
+#include <stdio.h>
+
+#include <string.h>
+
+#include <unistd.h>
+
+#include <arpa/inet.h>
+
+ 
+
+int main() {
+
+   int server_fd, client_fd;
+
+   struct sockaddr_in server, client;
+
+   socklen_t len = sizeof(client);
+
+   int a, b, choice, result;
+
+ 
+
+   server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+ 
+
+   server.sin_family = AF_INET;
+
+   server.sin_port = htons(8080);
+
+   server.sin_addr.s_addr = INADDR_ANY;
+
+ 
+
+   bind(server_fd, (struct sockaddr *)&server, sizeof(server));
+
+   listen(server_fd, 1);
+
+ 
+
+   printf("Server waiting for client...\n");
+
+   client_fd = accept(server_fd, (struct sockaddr *)&client, &len);
+
+ 
+
+   recv(client_fd, &a, sizeof(a), 0);
+
+   recv(client_fd, &b, sizeof(b), 0);
+
+   recv(client_fd, &choice, sizeof(choice), 0);
+
+ 
+
+   switch (choice) {
+
+       case 1: result = a + b; break;
+
+       case 2: result = a - b; break;
+
+       case 3: result = a * b; break;
+
+       case 4:
+
+           if (b == 0) {
+
+               printf("Division by zero is not allowed.\n");
+
+               close(client_fd);
+
+               close(server_fd);
+
+               return 0;
+
+           }
+
+           result = a / b;
+
+           break;
+
+       default:
+
+           printf("Invalid operation.\n");
+
+           close(client_fd);
+
+           close(server_fd);
+
+           return 0;
+
+   }
+
+ 
+
+   send(client_fd, &result, sizeof(result), 0);
+
+   printf("Result sent: %d\n", result);
+
+ 
+
+   close(client_fd);
+
+   close(server_fd);
+
+   return 0;
+
+}
+
+ 
+
+B) Client program:
+
+ 
+
+#include <stdio.h>
+
+#include <unistd.h>
+
+#include <arpa/inet.h>
+
+ 
+
+int main() {
+
+   int sock;
+
+   struct sockaddr_in server;
+
+   int a, b, choice, result;
+
+ 
+
+   sock = socket(AF_INET, SOCK_STREAM, 0);
+
+ 
+
+   server.sin_family = AF_INET;
+
+   server.sin_port = htons(8080);
+
+   server.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+ 
+
+   connect(sock, (struct sockaddr *)&server, sizeof(server));
+
+ 
+
+   printf("Enter two numbers: ");
+
+   scanf("%d %d", &a, &b);
+
+ 
+
+   printf("1.Add  2.Subtract  3.Multiply  4.Divide\n");
+
+   printf("Enter choice: ");
+
+   scanf("%d", &choice);
+
+ 
+
+   send(sock, &a, sizeof(a), 0);
+
+   send(sock, &b, sizeof(b), 0);
+
+   send(sock, &choice, sizeof(choice), 0);
+
+ 
+
+   if (choice >= 1 && choice <= 4) {
+
+       if (choice == 4 && b == 0) {
+
+           printf("Division by zero is not allowed.\n");
+
+       } else {
+
+           if (recv(sock, &result, sizeof(result), MSG_WAITALL) > 0)
+
+               printf("Result = %d\n", result);
+
+           else
+
+               printf("No result received.\n");
+
+       }
+
+   } else {
+
+       printf("Invalid choice.\n");
+
+   }
+
+ 
+
+   close(sock);
+
+   return 0;
+
+}
